@@ -1611,7 +1611,133 @@ void func_us_80176814(Entity* self) {
 
 INCLUDE_ASM("servant/tt_003/nonmatchings/demon", func_us_80176C1C);
 
-INCLUDE_ASM("servant/tt_003/nonmatchings/demon", func_us_801771B0);
+// PSX: https://decomp.me/scratch/qDGTj
+// PSP: https://decomp.me/scratch/D67x7
+extern s16 D_us_80171B44[3][8];    
+extern s32 D_us_80178688;
+extern s32 D_us_8017868C;
+
+void func_us_801771B0(Entity* self) {
+    Primitive* prim;
+    s16 colorValue;
+    s32 i;
+    s16* temp;
+    // s32 i;
+    s32 posX_hi;
+    s32 posY_hi;
+    s16* uvCoords;
+
+    switch (self->step) {
+        case 0:
+            if (self->params == 0) {
+                D_us_80178688 = self->posX.val;
+                D_us_8017868C = self->posY.val;
+            } else {
+                self->posX.val = D_us_80178688;
+                self->posY.val = D_us_8017868C;
+            }
+
+            self->primIndex = g_api.AllocPrimitives(PRIM_GT4, 3);
+            if (self->primIndex == -1) {
+                DestroyEntity(self);
+                return;
+            }
+
+            self->flags = 0x0C800000;
+            HIH(self->velocityX) = (self->facingLeft != 0) ? -0x10 : 0x10;
+
+            switch (self->params) {
+                case 2:
+                    self->posY.i.hi += 8;
+                case 1:
+                    self->posY.i.hi += 8;
+                case 0:
+                    self->posX.i.hi += (self->facingLeft != 0) ? -0x20 : 0x20;
+    
+            }
+
+            prim = &g_PrimBuf[self->primIndex];
+            for (i = 0; i < 3; i++) {
+                prim->tpage = 0x1A;
+                prim->clut = 0x147;
+                prim->priority = self->zPriority + 1;
+                prim->drawMode = 0x35;
+                prim->u0 = prim->u2 = 0xB;
+                prim->u1 = prim->u3 = 0x35;
+                prim->v0 = prim->v1 = 0xCB;
+                prim->v2 = prim->v3 = 0xF5;
+                PCOL(prim) = 0x80;
+
+                prim = prim->next;
+            }
+
+            g_api.GetServantStats(self, 0x1B, 1, &s_DemonStats);
+
+            self->hitboxOffX = -4U;
+            self->hitboxOffY = 0;
+            self->hitboxWidth = 0x1C;
+            self->hitboxHeight = 4;
+
+            self->step++;
+            if (self->params >= 2) {
+                self->step++;
+            }
+            break;
+
+        case 1:
+            self->ext.ILLEGAL.s16[0] += 1;
+            self->posX.val += self->velocityX;
+
+            if (self->ext.ILLEGAL.s16[0] >= 3) {
+                CreateEventEntity(self, 0xDE, self->params + 1);
+                self->step += 1;
+            }
+            break;
+
+        case 2:
+            self->posX.val += self->velocityX;
+            self->ext.ILLEGAL.s16[0] += 1;
+
+            if ((u16)(self->posX.i.hi + 0x20 & 0xFFFF) >= 0x141U) {
+                DestroyEntity(self);
+                return;
+            }
+            break;
+    }
+
+    posX_hi = self->posX.i.hi;
+    posY_hi = self->posY.i.hi;
+
+        prim = &g_PrimBuf[self->primIndex];
+        for (i = 0; i < 3; i++) {
+
+            if (self->facingLeft) {
+                prim->x0 = posX_hi - D_us_80171B44[i][0];
+                prim->y0 = posY_hi - D_us_80171B44[i][1];
+                prim->x1 = posX_hi - D_us_80171B44[i][2];
+                prim->y1 = posY_hi - D_us_80171B44[i][3];
+                prim->x2 = posX_hi - D_us_80171B44[i][4];
+                prim->y2 = posY_hi - D_us_80171B44[i][5];
+                prim->x3 = posX_hi - D_us_80171B44[i][6];
+                prim->y3 = posY_hi - D_us_80171B44[i][7];
+            } else {
+                prim->x0 = posX_hi + D_us_80171B44[i][0];
+                prim->y0 = posY_hi + D_us_80171B44[i][1];
+                prim->x1 = posX_hi + D_us_80171B44[i][2];
+                prim->y1 = posY_hi + D_us_80171B44[i][3];
+                prim->x2 = posX_hi + D_us_80171B44[i][4];
+                prim->y2 = posY_hi + D_us_80171B44[i][5];
+                prim->x3 = posX_hi + D_us_80171B44[i][6];
+                prim->y3 = posY_hi + D_us_80171B44[i][7];
+            }
+
+            PCOL(prim) = ((self->ext.ILLEGAL.s16[0] & 1)*64) + 0x40;
+            prim = prim->next;
+        }
+
+}
+
+
 
 extern s32 D_us_801786D0;
 extern s32 D_us_801786D4;
